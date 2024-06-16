@@ -241,72 +241,94 @@ const
 
     Vector3<TFloat> thisV  = this->ToVector();
     Vector3<TFloat> otherV = other.ToVector();
-    Vector3<TFloat> crossV = thisV.Cross(otherV);
-    Vector3<TFloat> startDist = this->Start - other.Start;
-
-    // Skew lines
-    if (std::abs(Vector3<TFloat>::DotProduct(
-        startDist,
-        crossV
-    )) > Vector3<TFloat>::eps)
     {
-#ifdef _LOG
-        std::cout << "Skew lines\n";
-#endif // _LOG
-        return Vector3<TFloat>(NAN);
-    }
-    // => on the same plane
+        Vector3<TFloat> crossV = thisV.Cross(otherV);
+        Vector3<TFloat> startDist = this->Start - other.Start;
 
-    // Parallel lines or the same line
-    if (crossV.SizeSquared() < Vector3<TFloat>::eps)
-    {
-        // Parallel lines
-        if (std::abs(Vector3<TFloat>::CrossProduct(
+        // Skew lines
+        if (std::abs(Vector3<TFloat>::DotProduct(
             startDist,
-            thisV
-        ).SizeSquared()) > Vector3<TFloat>::eps)
+            crossV
+        )) > Vector3<TFloat>::eps)
         {
 #ifdef _LOG
-            std::cout << "Parallel lines\n";
+            std::cout << "Skew lines\n";
 #endif // _LOG
             return Vector3<TFloat>(NAN);
         }
-        // => same line
+        // => on the same plane
+
+        // Parallel lines or the same line
+        if (crossV.SizeSquared() < Vector3<TFloat>::eps)
+        {
+            // Parallel lines
+            if (std::abs(Vector3<TFloat>::CrossProduct(
+                startDist,
+                thisV
+            ).SizeSquared()) > Vector3<TFloat>::eps)
+            {
+#ifdef _LOG
+                std::cout << "Parallel lines\n";
+#endif // _LOG
+                return Vector3<TFloat>(NAN);
+            }
+            // => same line
 
 #ifdef _LOG
-        std::cout << "Same line\n";
+            std::cout << "Same line\n";
 #endif // _LOG
-        return (
-            this->AABBOverlap(other.Start) ?
-            other.Start : other.End
-        );
+            return (
+                this->AABBOverlap(other.Start) ?
+                other.Start : other.End
+                );
+        }
+        // => lines intersect
     }
-    // => lines intersect
 
     TFloat Vector3<TFloat>::* U = &Vector3<TFloat>::X;
     TFloat Vector3<TFloat>::* V = &Vector3<TFloat>::Y;
 
-    if (std::abs(thisV.X) < Vector3<TFloat>::eps)
+    while (std::abs(thisV .X) < Vector3<TFloat>::eps ||
+           std::abs(otherV.Y) < Vector3<TFloat>::eps)
     {
-        if (std::abs(thisV.Y) > Vector3<TFloat>::eps)
-            U = &Vector3<TFloat>::Y;
-
-        else if (std::abs(thisV.Z) > Vector3<TFloat>::eps)
-            U = &Vector3<TFloat>::Z;
-    }
-
-    if (U == V || std::abs(otherV.Y) < Vector3<TFloat>::eps)
-    {
-        if (U != &Vector3<TFloat>::X &&
-            std::abs(otherV.X) > Vector3<TFloat>::eps)
+        if (std::abs(thisV .Y) > Vector3<TFloat>::eps &&
+            std::abs(otherV.Z) > Vector3<TFloat>::eps )
         {
-            V = &Vector3<TFloat>::X;
+            U = &Vector3<TFloat>::Y;
+            V = &Vector3<TFloat>::Z;
+            break;
         }
 
-        else if (U != &Vector3<TFloat>::Z &&
-            std::abs(otherV.Z) > Vector3<TFloat>::eps)
+        if (std::abs(thisV .Z) > Vector3<TFloat>::eps &&
+            std::abs(otherV.X) > Vector3<TFloat>::eps )
         {
+            U = &Vector3<TFloat>::Z;
+            V = &Vector3<TFloat>::X;
+            break;
+        }
+
+        if (std::abs(thisV .Y) > Vector3<TFloat>::eps &&
+            std::abs(otherV.X) > Vector3<TFloat>::eps )
+        {
+            U = &Vector3<TFloat>::Y;
+            V = &Vector3<TFloat>::X;
+            break;
+        }
+
+        if (std::abs(thisV .Z) > Vector3<TFloat>::eps &&
+            std::abs(otherV.Y) > Vector3<TFloat>::eps )
+        {
+            U = &Vector3<TFloat>::Z;
+            V = &Vector3<TFloat>::Y;
+            break;
+        }
+
+        if (std::abs(thisV .X) > Vector3<TFloat>::eps &&
+            std::abs(otherV.Z) > Vector3<TFloat>::eps )
+        {
+            U = &Vector3<TFloat>::X;
             V = &Vector3<TFloat>::Z;
+            break;
         }
     }
 
